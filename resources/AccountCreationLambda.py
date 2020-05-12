@@ -318,6 +318,21 @@ def main(event,context):
             root_id = "Error"
 
         if root_id  is not "Error":
+
+            # for debugging: exmine template beforehand
+#            try:
+#                template = get_template(sourcebucket,baselinetemplate)
+#            except:
+#                e = sys.exc_info()
+#                print("Error while getting template.. {}".format(e))
+#                respond_cloudformation(event, "FAILED", { "Message": "Error while getting template.. {}".format(e) })
+#                sys.exit(1)
+#
+#
+#            respond_cloudformation(event, "SUCCESS", { "Message": "getting template success {}".format(template) })
+#
+#            sys.exit(0)
+
             try:
                 #Create new account
                 print("Creating new account: " + accountname + " (" + accountemail + ")")
@@ -367,7 +382,26 @@ def main(event,context):
                         i+=1
                 respond_cloudformation(event, "SUCCESS", { "Message": "Account created successfully", "AccountID" : account_id, "LoginURL" : "https://" +account_id+".signin.aws.amazon.com/console", "Username" : ServiceCatalogUserName })
             except botocore.exceptions.ClientError as e:
-                print("An error occured: {}. Error Stack: {}".format(r,e))
+                #It's not very good to try print both variables at same time
+                #print("An error occured: {}. Error Stack: {}".format(r,e))
+
+                # since variable 'r' might never be assigned in some case like failure of get_template
+                # and causes another error like below
+                #local variable 'r' referenced before assignment: UnboundLocalError
+                #Traceback (most recent call last):
+                #  File "/var/task/AccountCreationLambda.py", line 366, in main
+                #    print("An error occured: 
+                #{}
+                #. Error Stack: 
+                #{}
+                #".format(r,e))
+                #UnboundLocalError: local variable 'r' referenced before assignment
+
+                #Therefore print them separately
+                print("An error occured. Error Stack: {}".format(e))
+                if isinstance(r, str):
+                    print("at region: {}".format(r))
+
                 sys.exit(0)
 
     if(event['RequestType'] == 'Update'):
