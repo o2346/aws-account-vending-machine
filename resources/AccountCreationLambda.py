@@ -320,18 +320,19 @@ def main(event,context):
         if root_id  is not "Error":
 
             # for debugging: exmine template beforehand
-#            try:
-#                template = get_template(sourcebucket,baselinetemplate)
-#            except:
-#                e = sys.exc_info()
-#                print("Error while getting template.. {}".format(e))
-#                respond_cloudformation(event, "FAILED", { "Message": "Error while getting template.. {}".format(e) })
-#                sys.exit(1)
-#
-#
-#            respond_cloudformation(event, "SUCCESS", { "Message": "getting template success {}".format(template) })
-#
-#            sys.exit(0)
+            try:
+                template = get_template(sourcebucket,baselinetemplate)
+            except:
+                e = sys.exc_info()
+                print("Error while getting template.. {}".format(e))
+                respond_cloudformation(event, "FAILED", { "Message": "Error while getting template Abort {}".format(e) })
+                sys.exit(1)
+
+            s3object = boto3.resource('s3').Object(sourcebucket,baselinetemplate)
+
+            respond_cloudformation(event, "SUCCESS", { "Message": "get_template successful {}".format(s3object), "AccountID" : 'N/A', "LoginURL" : "N/A", "Username" : "N/A"})
+
+            sys.exit(0)
 
             try:
                 #Create new account
