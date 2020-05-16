@@ -17,6 +17,7 @@ import argparse
 import os
 import urllib
 import json
+import jmespath
 from botocore.vendored import requests
 
 '''AWS Organizations Create Account and Provision Resources via CloudFormation
@@ -207,7 +208,9 @@ def get_ou_name_id(event, root_id,organization_unit_name):
     ou_name_to_id = {}
 
     list_of_OUs_response = ou_client.list_organizational_units_for_parent(ParentId=root_id)
+    search_result = jmespath.search('OrganizationalUnits[?Name==`{}`]'.format(organization_unit_name),list_of_OUs_response)
 
+    print("search_result = {}".format(search_result))
     print(list_of_OUs_response)
 
     for i in list_of_OUs_response['OrganizationalUnits']:
