@@ -208,9 +208,13 @@ def get_ou_name_id(event, root_id,organization_unit_name):
 
     list_of_OUs_response = ou_client.list_organizational_units_for_parent(ParentId=root_id)
 
+    print(list_of_OUs_response)
+
     for i in list_of_OUs_response['OrganizationalUnits']:
         list_of_OU_ids.append(i['Id'])
         list_of_OU_names.append(i['Name'])
+
+    print(list_of_OU_names)
 
     if(organization_unit_name not in list_of_OU_names):
         print("The provided Organization Unit Name doesnt exist. Creating an OU named: {}".format(organization_unit_name))
@@ -284,6 +288,7 @@ def main(event,context):
     access_to_billing = "DENY"
     scp = None
 
+
     if (event['RequestType'] == 'Create'):
         top_level_account = event['ServiceToken'].split(':')[4]
         print("The top level account is "+top_level_account)
@@ -294,6 +299,17 @@ def main(event,context):
             root_id = list_roots_response['Roots'][0]['Id']
         except:
             root_id = "Error"
+
+        try:
+            (organization_unit_name,organization_unit_id) = get_ou_name_id(event, root_id,organization_unit_name)
+            print("{} : {}".format(organization_unit_name, organization_unit_id))
+        except botocore.exceptions.ClientError as e:
+            print("An error occured. {}".format(e))
+            respond_cloudformation(event, "FAILED", { "Message": e })
+            sys.exit(1)
+
+        respond_cloudformation(event, "SUCCESS", { "Message": "Abort", "AccountID" : 'N/A', "LoginURL" : "N/A", "Username" : "N/A"})
+        sys.exit(0)
 
         if root_id  is not "Error":
             try:
