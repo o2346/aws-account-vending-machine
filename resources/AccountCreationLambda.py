@@ -12,6 +12,7 @@ from __future__ import print_function
 import boto3
 import botocore
 import time
+import random
 import sys
 import argparse
 import os
@@ -64,13 +65,33 @@ def get_template(sourcebucket,baselinetemplate):
 
 def delete_default_vpc(credentials,currentregion):
     #print("Default VPC deletion in progress in {}".format(currentregion))
-    ec2_client = boto3.client('ec2',
-                          aws_access_key_id=credentials['AccessKeyId'],
-                          aws_secret_access_key=credentials['SecretAccessKey'],
-                          aws_session_token=credentials['SessionToken'],
-                          region_name=currentregion)
 
-    vpc_response = ec2_client.describe_vpcs()
+    #2020-07-21T12:51:02.271+09:00
+    #An error occured while deleting Default VPC in eu-north-1. Error: An error occurred (OptInRequired) when calling the DescribeVpcs operation: You are not subscribed to this service. Please go to http://aws.amazon.com to subscribe.
+    #
+    #https://forums.aws.amazon.com/thread.jspa?threadID=96086
+    #https://stackoverflow.com/questions/49297879/boto3-clienterror-you-are-not-subscribed-to-this-service
+    max = 8
+    for n in range(max):
+        if( n == (max - 1 ) ):
+            print('Error Gave up to describe vpc, No point to proceed. Abort')
+            return 1
+        waitfor = random.randint(0, ((2 ** n) - 1)) # exponential backoff
+        time.sleep(waitfor)
+        try:
+            ec2_client = boto3.client('ec2',
+                                  aws_access_key_id=credentials['AccessKeyId'],
+                                  aws_secret_access_key=credentials['SecretAccessKey'],
+                                  aws_session_token=credentials['SessionToken'],
+                                  region_name=currentregion)
+            vpc_response = ec2_client.describe_vpcs()
+            print(vpc_response)
+            break
+        except:
+            print(sys.exc_info())
+            print("Failure decribing vpc " + currentregion + "may retry after a while")
+            continue
+
     for i in range(0,len(vpc_response['Vpcs'])):
         if((vpc_response['Vpcs'][i]['InstanceTenancy']) == 'default'):
             default_vpcid = vpc_response['Vpcs'][0]['VpcId']
